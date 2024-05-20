@@ -1,6 +1,6 @@
 {
-  "name": "react-pdf-tailwind",
-  "version": "2.3.0",
+  "name": "@glocksoftware/react-pdf-tailwind",
+  "version": "2.3.1",
   "description": "Use Tailwind CSS to style PDFs created with react-pdf",
   "keywords": [
     "tailwind",
@@ -17,7 +17,7 @@
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "dev": "tsup src/index.ts --watch",
     "lint": "tsc",
-    "test": "vitest",
+    "test": "vitest --hideSkippedTests",
     "test:run": "vitest --run"
   },
   "files": [

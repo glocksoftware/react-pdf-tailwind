@@ -14,10 +14,11 @@ export type Theme = Record<
   ScaledProperty,
   Record<string, string | [string, Style] | undefined>
 > & {
-  colors: Record<
-    string,
-    Record<string, string | undefined> | string | undefined
-  >;
+  colors: {
+	[key: string]: string | {
+	  [key: string]: string | undefined;
+	};
+  };
 };
 
 type Config = Omit<TailwindConfig, "content">;
@@ -89,6 +90,10 @@ export function createTw(config: Config, options?: Options) {
     }
   }
 
+  function getFirstSegment(value: string) {
+	return value.split("-")[0];
+  }
+
   function getCustomValue(value: string) {
     if (value.startsWith("[") && value.endsWith("]")) {
       return value.slice(1, value.length - 1).replaceAll("_", " ");
@@ -108,8 +113,6 @@ export function createTw(config: Config, options?: Options) {
     property?: string,
     isNegative?: boolean
   ): Value {
-    const valueParts = value.split("-");
-
     // Custom value
     const customValue = getCustomValue(value);
     if (customValue) {
@@ -141,27 +144,37 @@ export function createTw(config: Config, options?: Options) {
 
     // Color
     // Exception for "font-weight: black" (not a color)
-    if (
-      valueParts[0] &&
-      valueParts[0] in theme.colors &&
-      property !== "fontWeight"
-    ) {
-      // TODO alpha colors like gray-500/50 etc
-      const color = theme.colors[valueParts[0]];
-      return {
-        value:
-          typeof color === "string"
-            ? color
-            : valueParts[1]
-            ? color?.[valueParts[1]]
-            : undefined,
-        type: "color" as const,
-        isCustom: false,
-        additionalProperties: undefined,
-      };
-    }
 
-    if (valueParts.length === 0 || !property) {
+	if ( property !== "fontWeight" ) {
+		// entire value is a color
+		const colorConfig = theme.colors[value];
+		let colorValue = null;
+
+		if ( colorConfig ) {
+			colorValue = typeof colorConfig === "string" ? colorConfig : colorConfig?.DEFAULT;
+		} else {
+			// TODO alpha colors like gray-500/50 etc
+			const match = /^(.*)-([^-]+)$/ig.exec(value);
+			const [, colorName, colorShade] = match || [];
+			if ( colorName && colorShade ) {
+				const colorConfig = theme.colors[colorName];
+				if ( colorConfig && typeof colorConfig !== "string" ) {
+					colorValue = colorConfig?.[colorShade];
+				}
+			}
+		}
+
+		if (colorValue) {
+			return {
+				value: colorValue,
+				type: "color" as const,
+				isCustom: false,
+				additionalProperties: undefined,
+			};
+		}
+	}
+
+    if (!value || !property) {
       return {
         value: undefined,
       };
@@ -215,7 +228,7 @@ export function createTw(config: Config, options?: Options) {
     className: string
   ): Style | Record<string, string | number | undefined> | undefined {
     const modifierParts = className.split(":");
-    const utilityStr = modifierParts[modifierParts.length - 1];
+    let utilityStr = modifierParts[modifierParts.length - 1] || '';
 
     // Exact utilities
     if (utilityStr && utilityStr in exactUtilities) {
@@ -224,16 +237,10 @@ export function createTw(config: Config, options?: Options) {
 
     // Utility patterns
     const isNegative = utilityStr ? utilityStr.startsWith("-") : false;
-    const utilityParts = utilityStr
-      ? utilityStr.slice(isNegative ? 1 : 0).split("-")
-      : [];
+	utilityStr = utilityStr ? utilityStr.slice(isNegative ? 1 : 0) : '';
 
     const matchingUtilityPatternKey = Object.keys(utilityPatterns).find(
-      (key) => {
-        const keyParts = key.split("-");
-        const comparisonKey = utilityParts.slice(0, keyParts.length).join("-");
-        return key === comparisonKey;
-      }
+      (key) => utilityStr.startsWith(`${key}-`)
     );
 
     if (matchingUtilityPatternKey) {
@@ -263,10 +270,14 @@ export function createTw(config: Config, options?: Options) {
     }
 
     // Special utilities
-    switch (utilityParts[0]) {
+	const utilityName = getFirstSegment(utilityStr);
+	const utilityParams = utilityName ? utilityStr.slice(utilityName.length + 1) : '';
+
+    switch (utilityName) {
       case "inset": {
-        const direction = ["x", "y"].find((i) => i === utilityParts[1]);
-        const valueStr = utilityParts.slice(direction ? 2 : 1).join("-");
+		const parsedAxis = getFirstSegment(utilityParams);
+        const direction = ["x", "y"].find((i) => i === parsedAxis);
+        const valueStr = utilityParams.split('-').slice(direction ? 1 : 0).join("-");
         const { value } = parseValue(valueStr, "inset", isNegative);
         switch (direction) {
           case "x":
@@ -290,8 +301,7 @@ export function createTw(config: Config, options?: Options) {
       }
 
       case "font": {
-        const valueStr = utilityParts.slice(1).join("-");
-        const customValue = getCustomValue(valueStr);
+        const customValue = getCustomValue(utilityParams);
         if (customValue) {
           if (isNumeric(customValue)) {
             return {
@@ -302,22 +312,21 @@ export function createTw(config: Config, options?: Options) {
             fontFamily: customValue,
           };
         }
-        if (theme.fontFamily && valueStr in theme.fontFamily) {
-          const { value } = parseValue(valueStr, "fontFamily");
+        if (theme.fontFamily && utilityParams in theme.fontFamily) {
+          const { value } = parseValue(utilityParams, "fontFamily");
           return {
             fontFamily: value,
           };
         }
-        const { value } = parseValue(valueStr, "fontWeight");
+        const { value } = parseValue(utilityParams, "fontWeight");
         return {
           fontWeight: value,
         };
       }
 
       case "text": {
-        const valueStr = utilityParts.slice(1).join("-");
         const { value, additionalProperties, type } = parseValue(
-          valueStr,
+          utilityParams,
           "fontSize"
         );
         if (type === "color") {
@@ -327,8 +336,7 @@ export function createTw(config: Config, options?: Options) {
       }
 
       case "decoration": {
-        const valueStr = utilityParts.slice(1).join("-");
-        const { value, type } = parseValue(valueStr, "textDecorationColor");
+        const { value, type } = parseValue(utilityParams, "textDecorationColor");
         if (type === "color") {
           return {
             textDecorationColor: value,
@@ -339,10 +347,11 @@ export function createTw(config: Config, options?: Options) {
       }
 
       case "rounded": {
+		const parseDir = getFirstSegment(utilityParams);
         const direction = ["t", "r", "b", "l", "tl", "tr", "br", "bl"].find(
-          (i) => i === utilityParts[1]
+          (i) => i === parseDir
         );
-        const valueStr = utilityParts.slice(direction ? 2 : 1).join("-");
+        const valueStr =  utilityParams.split('-').slice(direction ? 1 : 0).join("-");
         const { value } = parseValue(valueStr || "DEFAULT", "borderRadius");
         switch (direction) {
           case "t":
@@ -390,10 +399,12 @@ export function createTw(config: Config, options?: Options) {
 
       case "border": {
         // Border width or color
+		const parsedDir = getFirstSegment(utilityParams);
         const direction = ["x", "y", "t", "r", "b", "l"].find(
-          (i) => i === utilityParts[1]
+          (i) => i === parsedDir
         );
-        const valueStr = utilityParts.slice(direction ? 2 : 1).join("-");
+        const valueStr = utilityParams.split('-').slice(direction ? 1 : 0).join("-");
+
         const { value, type } = parseValue(
           valueStr || "DEFAULT",
           "borderWidth"
@@ -426,8 +437,9 @@ export function createTw(config: Config, options?: Options) {
       }
 
       case "scale": {
-        const direction = ["x", "y"].find((i) => i === utilityParts[1]);
-        const valueStr = utilityParts.slice(direction ? 2 : 1).join("-");
+		const parsedAxis = getFirstSegment(utilityParams);
+        const direction = ["x", "y"].find((i) => i === parsedAxis);
+        const valueStr = utilityParams.split('-').slice(direction ? 1 : 0).join("-");
         const { value } = parseValue(valueStr, "scale", isNegative);
         switch (direction) {
           case "x":
@@ -447,7 +459,7 @@ export function createTw(config: Config, options?: Options) {
 
       case "rotate": {
         const { value } = parseValue(
-          utilityParts.slice(1).join("-"),
+          utilityParams,
           "rotate",
           isNegative
         );
@@ -457,8 +469,9 @@ export function createTw(config: Config, options?: Options) {
       }
 
       case "translate": {
-        const direction = ["x", "y"].find((i) => i === utilityParts[1]);
-        const valueStr = utilityParts.slice(direction ? 2 : 1).join("-");
+		const parsedAxis = getFirstSegment(utilityParams);
+        const direction = ["x", "y"].find((i) => i === parsedAxis);
+        const valueStr = utilityParams.split('-').slice(direction ? 1 : 0).join("-");
         const { value } = parseValue(valueStr, "translate", isNegative);
         switch (direction) {
           case "x":

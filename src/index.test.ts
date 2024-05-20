@@ -2,6 +2,8 @@ import { createTw } from ".";
 import { px, rem } from "./utils";
 import { describe, test, expect } from "vitest";
 
+import { inspect } from 'util';
+
 const colors = [
   ["inherit", "inherit"],
   ["current", "currentColor"],
@@ -10,6 +12,9 @@ const colors = [
   ["white", "#fff"],
   ["gray-500", "#6b7280"],
   ["badass", "#bada55"],
+  ["custom-red", "#ff0000"],
+  ["violet-red-300", "#FC99B8"],
+  ["violet-red", "#FA4A80"],
   ["[#bada55]", "#bada55"],
   ["[rgb(69,69,69)]", "rgb(69,69,69)"],
   ["[hsl(69,69,69)]", "hsl(69,69,69)"],
@@ -109,6 +114,21 @@ const tw = createTw({
       },
       colors: {
         badass: "#bada55",
+		'custom-red': '#ff0000',
+		'violet-red': {
+			DEFAULT: '#FA4A80',
+			50: '#FFFDFD',
+			100: '#FEE9EF',
+			200: '#FDC1D4',
+			300: '#FC99B8',
+			400: '#FB729C',
+			500: '#FA4A80',
+			600: '#F8135A',
+			700: '#CE0643',
+			800: '#980431',
+			900: '#610320',
+			950: '#460217',
+		},
       },
     },
   },
@@ -117,6 +137,23 @@ const tw = createTw({
 const customPtPerRem = 16;
 
 const twWithCustomPtPerRem = createTw({}, {ptPerRem: customPtPerRem});
+
+
+//   describe.only("SINGLE TEST", () => {
+// 	test('text-inherit', () => {
+// 		expect(tw('text-inherit')).toEqual({
+// 			"color": "inherit",
+// 		});
+// 	});
+
+// 	test('text-custom-red', () => {
+// 		expect(tw('text-custom-red')).toEqual({
+// 			"color": "#ff0000",
+// 		});
+// 	});
+//   });
+
+
 
 describe("Layout", () => {
   describe("display", () => {
