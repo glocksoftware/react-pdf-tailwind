@@ -8,7 +8,10 @@
     "pdf"
   ],
   "author": "Andreas Anckar",
-  "homepage": "https://github.com/aanckar/react-pdf-tailwind",
+  "contributors": [
+		"Aliaksei Ladyha"
+ ],
+  "homepage": "https://github.com/glocksoftware/react-pdf-tailwind",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
