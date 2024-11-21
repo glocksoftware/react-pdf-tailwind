@@ -1,6 +1,6 @@
 {
   "name": "@glocksoftware/react-pdf-tailwind",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Use Tailwind CSS to style PDFs created with react-pdf",
   "keywords": [
     "tailwind",
@@ -9,8 +9,8 @@
   ],
   "author": "Andreas Anckar",
   "contributors": [
-		"Aliaksei Ladyha"
- ],
+    "Aliaksei Ladyha"
+  ],
   "homepage": "https://github.com/glocksoftware/react-pdf-tailwind",
   "license": "MIT",
   "main": "dist/index.js",
@@ -27,7 +27,7 @@
     "dist"
   ],
   "dependencies": {
-    "@react-pdf/renderer": "^3.1.14",
+    "@react-pdf/renderer": "^4.1.4",
     "tailwindcss": "^3.3.6"
   },
   "devDependencies": {
@@ -36,5 +36,6 @@
     "tsup": "^8.0.1",
     "typescript": "^5.3.3",
     "vitest": "^1.0.4"
-  }
+  },
+  "packageManager": "pnpm@9.14.2+sha512.6e2baf77d06b9362294152c851c4f278ede37ab1eba3a55fda317a4a17b209f4dbb973fb250a77abc463a341fcb1f17f17cfa24091c4eb319cda0d9b84278387"
 }
