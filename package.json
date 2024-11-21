@@ -1,6 +1,6 @@
 {
   "name": "@glocksoftware/react-pdf-tailwind",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "Use Tailwind CSS to style PDFs created with react-pdf",
   "keywords": [
     "tailwind",
@@ -11,6 +11,10 @@
   "contributors": [
     "Aliaksei Ladyha"
   ],
+  "repository": {
+  	"type": "git",
+ 	"url": "https://github.com/glocksoftware/react-pdf-tailwind.git"
+  },
   "homepage": "https://github.com/glocksoftware/react-pdf-tailwind",
   "license": "MIT",
   "main": "dist/index.js",
